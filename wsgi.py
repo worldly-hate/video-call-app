@@ -1,7 +1,7 @@
 import sys
 import os
 
-path = '/home/Worldlyhate/video-call-app'
+path = '/home/worldlyhate/video-call-app'  # Changed to lowercase
 if path not in sys.path:
     sys.path.append(path)
 
