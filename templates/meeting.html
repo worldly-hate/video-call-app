@@ -3,8 +3,9 @@
 {% block full_content %}
 <div class="container">
     <h1>Video Meeting Room</h1>
-    <div id="local-player"></div>
-    <div id="remote-player"></div>
+    <div id="video-container"></div>
+    <canvas id="drawing-canvas"></canvas>
+    
     <div class="controls">
         <button onclick="startCall()">Start Call</button>
         <button onclick="toggleMic()">Toggle Mic</button>
@@ -12,8 +13,13 @@
         <button onclick="toggleDrawing()">Toggle Drawing</button>
         <button onclick="leaveCall()">Leave Call</button>
     </div>
-    <div id="drawing-controls">
-        <!-- Add drawing controls here -->
+
+    <div class="drawing-controls" id="drawing-controls">
+        <button onclick="clearCanvas()">Clear</button>
+        <button class="color-btn" onclick="setColor('#0000FF')" style="background: blue;"></button>
+        <button class="color-btn" onclick="setColor('#00FF00')" style="background: green;"></button>
+        <button class="color-btn" onclick="setColor('#FF0000')" style="background: red;"></button>
+        <button class="color-btn" onclick="setColor('#FFFF00')" style="background: yellow;"></button>
     </div>
 </div>
 {% endblock %}
@@ -45,7 +51,7 @@ async function initializeZegoCloud() {
 
         const zp = ZegoUIKitPrebuilt.create(kitToken);
         zp.joinRoom({
-            container: document.querySelector("#remote-player"),
+            container: document.querySelector("#video-container"),
             sharedLinks: [{
                 name: 'Personal link',
                 url: window.location.protocol + '//' + window.location.host + window.location.pathname + '?roomID=' + roomID,
@@ -114,7 +120,27 @@ function leaveCall() {
 }
 
 function toggleDrawing() {
-    // Add drawing toggle logic here
+    const drawingControls = document.getElementById('drawing-controls');
+    const canvas = document.getElementById('drawing-canvas');
+    if (drawingControls.style.display === 'none' || !drawingControls.style.display) {
+        drawingControls.style.display = 'block';
+        canvas.style.pointerEvents = 'auto';
+    } else {
+        drawingControls.style.display = 'none';
+        canvas.style.pointerEvents = 'none';
+    }
+}
+
+function clearCanvas() {
+    const canvas = document.getElementById('drawing-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function setColor(color) {
+    const canvas = document.getElementById('drawing-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = color;
 }
 
 // Get the username from Flask
