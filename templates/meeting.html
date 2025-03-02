@@ -3,17 +3,8 @@
 {% block full_content %}
 <div class="container">
     <h1>Video Meeting Room</h1>
-    <div id="video-container"></div>
+    <div id="root"></div>
     <canvas id="drawing-canvas"></canvas>
-    
-    <div class="controls">
-        <button onclick="startCall()">Start Call</button>
-        <button onclick="toggleMic()">Toggle Mic</button>
-        <button onclick="toggleCamera()">Toggle Camera</button>
-        <button onclick="toggleDrawing()">Toggle Drawing</button>
-        <button onclick="leaveCall()">Leave Call</button>
-    </div>
-
     <div class="drawing-controls" id="drawing-controls">
         <button onclick="clearCanvas()">Clear</button>
         <button class="color-btn" onclick="setColor('#0000FF')" style="background: blue;"></button>
@@ -51,7 +42,7 @@ async function initializeZegoCloud() {
 
         const zp = ZegoUIKitPrebuilt.create(kitToken);
         zp.joinRoom({
-            container: document.querySelector("#video-container"),
+            container: document.querySelector("#root"),
             sharedLinks: [{
                 name: 'Personal link',
                 url: window.location.protocol + '//' + window.location.host + window.location.pathname + '?roomID=' + roomID,
@@ -70,6 +61,17 @@ async function initializeZegoCloud() {
             maxUsers: 2,
             layout: "Auto",
             showLayoutButton: false,
+            onJoinRoom: () => {
+                // Add drawing button to Zego controls
+                const controlBar = document.querySelector('.zego-uikit-prebuilt-video-conference-footer');
+                if (controlBar) {
+                    const drawButton = document.createElement('button');
+                    drawButton.innerHTML = 'Toggle Drawing';
+                    drawButton.className = 'zego-uikit-prebuilt-video-conference-footer__btn';
+                    drawButton.onclick = toggleDrawing;
+                    controlBar.appendChild(drawButton);
+                }
+            }
         });
     } catch (error) {
         console.error("Error accessing media devices:", error);

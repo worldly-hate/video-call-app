@@ -1,13 +1,10 @@
-let isDrawingEnabled = false;
-let canvas = null;
-let ctx = null;
-let drawingColor = '#0000FF'; // Default blue
 let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
+let currentColor = '#0000FF';
 
 function initializeCanvas() {
-    canvas = document.createElement('canvas');
+    const canvas = document.createElement('canvas');
     canvas.id = 'drawing-canvas';
     canvas.style.position = 'absolute';
     canvas.style.top = '0';
@@ -16,10 +13,11 @@ function initializeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     document.body.appendChild(canvas);
-    ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
 
     // Create color picker and clear button
     const controls = document.createElement('div');
+    controls.id = 'drawing-controls';
     controls.style.position = 'fixed';
     controls.style.top = '10px';
     controls.style.left = '10px';
@@ -37,6 +35,9 @@ function initializeCanvas() {
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        ctx.strokeStyle = currentColor;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
     }
     
     resizeCanvas();
@@ -59,8 +60,6 @@ function initializeCanvas() {
         ctx.beginPath();
         ctx.moveTo(lastX, lastY);
         ctx.lineTo(e.offsetX, e.offsetY);
-        ctx.strokeStyle = drawingColor;
-        ctx.lineWidth = 2;
         ctx.stroke();
         [lastX, lastY] = [e.offsetX, e.offsetY];
     }
@@ -71,30 +70,37 @@ function initializeCanvas() {
 }
 
 function toggleDrawing() {
-    isDrawingEnabled = !isDrawingEnabled;
-    if (isDrawingEnabled) {
+    const drawingControls = document.getElementById('drawing-controls');
+    const canvas = document.getElementById('drawing-canvas');
+    
+    if (drawingControls.style.display === 'none' || !drawingControls.style.display) {
+        drawingControls.style.display = 'block';
+        canvas.style.pointerEvents = 'auto';
         initializeCanvas();
     } else {
+        drawingControls.style.display = 'none';
+        canvas.style.pointerEvents = 'none';
         if (canvas) {
             canvas.remove();
-            canvas = null;
         }
     }
 }
 
-function setColor(color) {
-    drawingColor = color;
+function clearCanvas() {
+    const canvas = document.getElementById('drawing-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-function clearCanvas() {
-    if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
+function setColor(color) {
+    currentColor = color;
+    const canvas = document.getElementById('drawing-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = color;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('mousedown', (e) => {
-        if (!isDrawingEnabled) return;
     });
 
     document.addEventListener('mousemove', () => {});
