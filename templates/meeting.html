@@ -1,69 +1,64 @@
-<html>
+{% extends "base.html" %}
 
-<head>
-    <title>Meetings</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
+{% block full_content %}
+<div id="root"></div>
+<div class="back-to-dashboard">
+    <a href="{{ url_for('dashboard') }}" style="text-decoration: none;">
+        <button>Back to Dashboard</button>
+    </a>
+</div>
+{% endblock %}
 
-
-<body>
-    <div id="root"></div>
-    <div class="back-to-dashboard">
-        <a href="{{ url_for('dashboard') }}" style="text-decoration: none;">
-            <button>Back to Dashboard</button>
-        </a>
-    </div>
-</body>
+{% block scripts %}
 <script src="https://unpkg.com/@zegocloud/zego-uikit-prebuilt/zego-uikit-prebuilt.js"></script>
 <script>
-window.onload = function () {
-    function getUrlParams(url) {
-        let urlStr = url.split('?')[1];
-        const urlSearchParams = new URLSearchParams(urlStr);
-        const result = Object.fromEntries(urlSearchParams.entries());
-        return result;
-    }
+async function initializeZegoCloud() {
+    try {
+        // Request permissions first
+        await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        
+        function getUrlParams(url) {
+            let urlStr = url.split('?')[1];
+            const urlSearchParams = new URLSearchParams(urlStr);
+            const result = Object.fromEntries(urlSearchParams.entries());
+            return result;
+        }
 
-
-        // Generate a Token by calling a method.
-        // @param 1: appID
-        // @param 2: serverSecret
-        // @param 3: Room ID
-        // @param 4: User ID
-        // @param 5: Username
-    const roomID = getUrlParams(window.location.href)['roomID'] || (Math.floor(Math.random() * 10000) + "");
-    const userID = Math.floor(Math.random() * 10000) + "";
-    const userName = "{{username}}";
-    const appID = appID;
-    const serverSecret = "serverSecret";
-    const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(appID, serverSecret, roomID, userID, userName);
-
+        const roomID = getUrlParams(window.location.href)['roomID'] || (Math.floor(Math.random() * 10000) + "");
+        const userID = Math.floor(Math.random() * 10000) + "";
+        const userName = "{{username}}";
+        const appID = 819347417;
+        const serverSecret = "ba06e342c41afb5e02221e369d22de62";
+        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(appID, serverSecret, roomID, userID, userName);
 
         const zp = ZegoUIKitPrebuilt.create(kitToken);
         zp.joinRoom({
             container: document.querySelector("#root"),
             sharedLinks: [{
                 name: 'Personal link',
-                url: window.location.protocol + '//' + window.location.host  + window.location.pathname + '?roomID=' + roomID,
+                url: window.location.protocol + '//' + window.location.host + window.location.pathname + '?roomID=' + roomID,
             }],
             scenario: {
                 mode: ZegoUIKitPrebuilt.VideoConference,
             },
-
-           	turnOnMicrophoneWhenJoining: true,
-           	turnOnCameraWhenJoining: true,
-           	showMyCameraToggleButton: true,
-           	showMyMicrophoneToggleButton: true,
-           	showAudioVideoSettingsButton: true,
-           	showScreenSharingButton: true,
-           	showTextChat: true,
-           	showUserList: true,
-           	maxUsers: 2,
-           	layout: "Auto",
-           	showLayoutButton: false,
-
-            });
+            turnOnMicrophoneWhenJoining: true,
+            turnOnCameraWhenJoining: true,
+            showMyCameraToggleButton: true,
+            showMyMicrophoneToggleButton: true,
+            showAudioVideoSettingsButton: true,
+            showScreenSharingButton: true,
+            showTextChat: true,
+            showUserList: true,
+            maxUsers: 2,
+            layout: "Auto",
+            showLayoutButton: false,
+        });
+    } catch (error) {
+        console.error("Error accessing media devices:", error);
+        alert("Please allow camera and microphone access to use this application. If you denied permission, please reset permissions in your browser settings and refresh the page.");
+    }
 }
-</script>
 
-</html>
+window.onload = initializeZegoCloud;
+</script>
+{% endblock %}
