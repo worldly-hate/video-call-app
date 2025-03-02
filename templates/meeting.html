@@ -1,12 +1,95 @@
 {% extends "base.html" %}
 
-{% block full_content %}
+{% block head %}
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    body {
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+        background: linear-gradient(135deg, #673AB7 0%, #2196F3 100%);
+    }
+    .container {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+    }
+    #root {
+        width: 100%;
+        height: 100%;
+    }
+    .drawing-controls {
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        background: rgba(0,0,0,0.8);
+        padding: 15px;
+        border-radius: 10px;
+        display: none;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .color-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 2px solid white;
+        margin: 0 5px;
+        cursor: pointer;
+        display: inline-block;
+        transition: transform 0.2s;
+    }
+    .color-btn:hover {
+        transform: scale(1.1);
+    }
+    .clear-btn {
+        background: #f44336;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 0 10px;
+        font-weight: bold;
+        transition: background 0.2s;
+    }
+    .clear-btn:hover {
+        background: #d32f2f;
+    }
+    #drawing-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9998;
+    }
+    #toggle-drawing {
+        background: #4CAF50 !important;
+        color: white !important;
+        border: none !important;
+        padding: 8px 16px !important;
+        border-radius: 5px !important;
+        cursor: pointer !important;
+        margin: 0 5px !important;
+        font-weight: bold !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
 <div class="container">
-    <h1>Video Meeting Room</h1>
     <div id="root"></div>
     <canvas id="drawing-canvas"></canvas>
+    
     <div class="drawing-controls" id="drawing-controls">
-        <button onclick="clearCanvas()" style="background: #f44336; color: white;">Clear</button>
+        <button class="clear-btn" onclick="clearCanvas()">Clear All</button>
         <button class="color-btn" onclick="setColor('#0000FF')" style="background: blue;"></button>
         <button class="color-btn" onclick="setColor('#00FF00')" style="background: green;"></button>
         <button class="color-btn" onclick="setColor('#FF0000')" style="background: red;"></button>
@@ -17,28 +100,27 @@
 
 {% block scripts %}
 <script src="https://unpkg.com/@zegocloud/zego-uikit-prebuilt/zego-uikit-prebuilt.js"></script>
-<script src="https://web.sdk.qcloud.com/im/im-sdk-v2/im.js"></script>
-<script src="https://web.sdk.qcloud.com/zego/zegocloud/zegocloud.js"></script>
 <script src="{{ url_for('static', filename='js/hand_gesture.js') }}"></script>
 <script>
 async function initializeZegoCloud() {
     try {
-        // Request permissions first
-        await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        
-        function getUrlParams(url) {
-            let urlStr = url.split('?')[1];
-            const urlSearchParams = new URLSearchParams(urlStr);
-            const result = Object.fromEntries(urlSearchParams.entries());
-            return result;
+        const roomID = "{{ request.args.get('roomID', '') }}";
+        if (!roomID) {
+            location.href = "{{ url_for('join') }}";
+            return;
         }
 
-        const roomID = getUrlParams(window.location.href)['roomID'] || (Math.floor(Math.random() * 10000) + "");
         const userID = Math.floor(Math.random() * 10000) + "";
-        const userName = "{{username}}";
-        const appID = 819347417;
-        const serverSecret = "ba06e342c41afb5e02221e369d22de62";
-        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(appID, serverSecret, roomID, userID, userName);
+        const userName = "{{ username }}";
+        const appID = {{ zego_config.appID }};
+        const serverSecret = "{{ zego_config.serverSecret }}";
+        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
+            appID,
+            serverSecret,
+            roomID,
+            userID,
+            userName
+        );
 
         const zp = ZegoUIKitPrebuilt.create(kitToken);
         zp.joinRoom({
@@ -48,80 +130,34 @@ async function initializeZegoCloud() {
                 url: window.location.protocol + '//' + window.location.host + window.location.pathname + '?roomID=' + roomID,
             }],
             scenario: {
-                mode: ZegoUIKitPrebuilt.VideoConference,
+                mode: ZegoUIKitPrebuilt.GroupCall,
             },
-            turnOnMicrophoneWhenJoining: true,
-            turnOnCameraWhenJoining: true,
-            showMyCameraToggleButton: true,
-            showMyMicrophoneToggleButton: true,
-            showAudioVideoSettingsButton: true,
-            showScreenSharingButton: true,
-            showTextChat: true,
-            showUserList: true,
-            maxUsers: 2,
-            layout: "Auto",
-            showLayoutButton: false,
+            showTurnOffRemoteCameraButton: true,
+            showTurnOffRemoteMicrophoneButton: true,
+            showRemoveUserButton: true,
             onJoinRoom: () => {
-                // Add drawing button to Zego controls after a short delay
+                // Wait for Zego UI to fully load
                 setTimeout(() => {
-                    const controlBar = document.querySelector('.zego-uikit-prebuilt-video-conference-footer');
-                    if (controlBar) {
+                    const bottomBar = document.querySelector('.zego-uikit-prebuilt-bottom-bar');
+                    if (bottomBar) {
                         const drawButton = document.createElement('button');
                         drawButton.id = 'toggle-drawing';
                         drawButton.innerHTML = '✏️ Draw';
                         drawButton.onclick = toggleDrawing;
-                        controlBar.appendChild(drawButton);
+                        bottomBar.appendChild(drawButton);
+                    } else {
+                        console.error('Could not find Zego bottom bar');
                     }
-                }, 1000);
+                }, 2000);
             }
         });
+
     } catch (error) {
-        console.error("Error accessing media devices:", error);
-        alert("Please allow camera and microphone access to use this application. If you denied permission, please reset permissions in your browser settings and refresh the page.");
+        console.error('Error initializing Zego:', error);
     }
 }
 
 window.onload = initializeZegoCloud;
-
-const localVideo = document.getElementById('local-player');
-let stream;
-let micEnabled = true;
-let cameraEnabled = true;
-
-async function startCall() {
-    try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        localVideo.srcObject = stream;
-        await localVideo.play();
-    } catch (error) {
-        console.error('Error accessing media devices:', error);
-    }
-}
-
-function toggleMic() {
-    if (stream) {
-        stream.getAudioTracks().forEach(track => {
-            track.enabled = !micEnabled;
-        });
-        micEnabled = !micEnabled;
-    }
-}
-
-function toggleCamera() {
-    if (stream) {
-        stream.getVideoTracks().forEach(track => {
-            track.enabled = !cameraEnabled;
-        });
-        cameraEnabled = !cameraEnabled;
-    }
-}
-
-function leaveCall() {
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-    }
-    window.location.href = "{{ url_for('dashboard') }}";
-}
 
 function toggleDrawing() {
     const drawingControls = document.getElementById('drawing-controls');
@@ -146,73 +182,5 @@ function setColor(color) {
     const ctx = canvas.getContext('2d');
     ctx.strokeStyle = color;
 }
-
-// Get the username from Flask
-const username = "{{ username }}";
-// Get room ID from URL parameters
-const urlParams = new URLSearchParams(window.location.search);
-const roomID = urlParams.get('roomID');
 </script>
-<style>
-    body {
-        margin: 0;
-        padding: 0;
-        font-family: Arial, sans-serif;
-        overflow: hidden;
-    }
-    .container {
-        width: 100vw;
-        height: 100vh;
-        position: relative;
-    }
-    #root {
-        width: 100%;
-        height: 100%;
-    }
-    .drawing-controls {
-        position: fixed;
-        bottom: 80px; /* Position above Zego controls */
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 1000;
-        background: rgba(0,0,0,0.7);
-        padding: 10px;
-        border-radius: 10px;
-        display: none;
-        text-align: center;
-    }
-    .drawing-controls button {
-        margin: 5px;
-        padding: 8px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-    .color-btn {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        border: 2px solid white;
-        padding: 0 !important;
-        margin: 0 5px !important;
-    }
-    #drawing-canvas {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 999;
-    }
-    #toggle-drawing {
-        background: #2196F3;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 5px;
-        cursor: pointer;
-        margin: 0 5px;
-    }
-</style>
 {% endblock %}
