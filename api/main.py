@@ -7,13 +7,17 @@ from flask_login import login_user, LoginManager, login_required, current_user, 
 import os
 
 db = SQLAlchemy()
-app = Flask(__name__)
+app = Flask(__name__, 
+    template_folder='../templates',
+    static_folder='../static'
+)
 
 # Configuration
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-12345')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///video-meeting.db')
+if app.config['SQLALCHEMY_DATABASE_URI'].startswith("postgres://"):
+    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # Initialize extensions
 db.init_app(app)
