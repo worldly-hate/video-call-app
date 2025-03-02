@@ -3,12 +3,28 @@
 
 {% block content %}
 <div class="container">
-        <h1 class="text-center mt-5">Join Meeting</h1>
+    <div class="card shadow-lg p-4 mt-5" style="max-width: 500px; margin: auto; background: rgba(255, 255, 255, 0.9);">
+        <h1 class="text-center mb-4">Join Meeting</h1>
         <form method="POST" action="{{ url_for('join') }}" class="mt-4">
-            <div class="form-group">
-                <input type="text" placeholder="Room ID:" class="form-control" id="roomID" name="roomID" required>
+            <div class="form-group mb-4">
+                <label for="roomID" class="form-label">Enter Meeting Room ID:</label>
+                <input type="text" placeholder="Enter 6-digit room ID" class="form-control form-control-lg" id="roomID" name="roomID" required pattern=".{6,}" title="Room ID must be at least 6 characters">
             </div>
-            <button type="submit" class="btn btn-primary btn-lg">Join</button>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">Join Meeting</button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+            </div>
         </form>
     </div>
+</div>
+
+<style>
+body {
+    background: linear-gradient(135deg, #673AB7 0%, #2196F3 100%);
+    min-height: 100vh;
+}
+.container {
+    padding-top: 50px;
+}
+</style>
 {% endblock %}

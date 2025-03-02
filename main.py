@@ -106,6 +106,13 @@ def dashboard():
 @app.route("/meeting")
 @login_required
 def meeting():
+    # Generate a random room ID for new meetings
+    room_id = str(hash(current_user.username + str(current_user.id)))[-6:]  # Use last 6 digits
+    return redirect(f"/meeting/room?roomID={room_id}")
+
+@app.route("/meeting/room")
+@login_required
+def meeting_room():
     return render_template("meeting.html", username=current_user.username, zego_config=ZEGO_CONFIG)
 
 @app.route("/join", methods=["GET", "POST"])
@@ -113,7 +120,7 @@ def meeting():
 def join():
     if request.method == "POST":
         room_id = request.form.get("roomID")
-        return redirect(f"/meeting?roomID={room_id}")
+        return redirect(f"/meeting/room?roomID={room_id}")
     return render_template("join.html")
 
 # Create tables
