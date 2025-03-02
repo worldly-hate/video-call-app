@@ -14,6 +14,12 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-12345')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///video-meeting.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Zego Cloud configuration
+ZEGO_CONFIG = {
+    'appID': 819347417,
+    'serverSecret': 'ba06e342c41afb5e02221e369d22de62'
+}
+
 # Initialize extensions
 db.init_app(app)
 login_manager = LoginManager()
@@ -100,7 +106,7 @@ def dashboard():
 @app.route("/meeting")
 @login_required
 def meeting():
-    return render_template("meeting.html", username=current_user.username)
+    return render_template("meeting.html", username=current_user.username, zego_config=ZEGO_CONFIG)
 
 @app.route("/join", methods=["GET", "POST"])
 @login_required
