@@ -10,23 +10,31 @@
     body {
         font-family: Arial, sans-serif;
         overflow: hidden;
-        background: linear-gradient(135deg, #673AB7 0%, #2196F3 100%);
-    }
-    .container {
-        width: 100vw;
-        height: 100vh;
-        position: relative;
+        background: #f0f0f0;
     }
     #root {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1;
+    }
+    #drawing-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
+        pointer-events: none;
+        z-index: 2;
     }
     .drawing-controls {
         position: fixed;
         bottom: 100px;
         left: 50%;
         transform: translateX(-50%);
-        z-index: 9999;
+        z-index: 3;
         background: rgba(0,0,0,0.8);
         padding: 15px;
         border-radius: 10px;
@@ -61,15 +69,6 @@
     .clear-btn:hover {
         background: #d32f2f;
     }
-    #drawing-canvas {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 9998;
-    }
     #toggle-drawing {
         background: #4CAF50 !important;
         color: white !important;
@@ -84,17 +83,14 @@
 {% endblock %}
 
 {% block full_content %}
-<div class="container">
-    <div id="root"></div>
-    <canvas id="drawing-canvas"></canvas>
-    
-    <div class="drawing-controls" id="drawing-controls">
-        <button class="clear-btn" onclick="clearCanvas()">Clear All</button>
-        <button class="color-btn" onclick="setColor('#0000FF')" style="background: blue;"></button>
-        <button class="color-btn" onclick="setColor('#00FF00')" style="background: green;"></button>
-        <button class="color-btn" onclick="setColor('#FF0000')" style="background: red;"></button>
-        <button class="color-btn" onclick="setColor('#FFFF00')" style="background: yellow;"></button>
-    </div>
+<div id="root"></div>
+<canvas id="drawing-canvas"></canvas>
+<div class="drawing-controls" id="drawing-controls">
+    <button class="clear-btn" onclick="clearCanvas()">Clear All</button>
+    <button class="color-btn" onclick="setColor('#0000FF')" style="background: blue;"></button>
+    <button class="color-btn" onclick="setColor('#00FF00')" style="background: green;"></button>
+    <button class="color-btn" onclick="setColor('#FF0000')" style="background: red;"></button>
+    <button class="color-btn" onclick="setColor('#FFFF00')" style="background: yellow;"></button>
 </div>
 {% endblock %}
 
@@ -102,7 +98,7 @@
 <script src="https://unpkg.com/@zegocloud/zego-uikit-prebuilt/zego-uikit-prebuilt.js"></script>
 <script src="{{ url_for('static', filename='js/hand_gesture.js') }}"></script>
 <script>
-async function initializeZegoCloud() {
+window.onload = async function() {
     try {
         const roomID = "{{ request.args.get('roomID', '') }}";
         if (!roomID) {
@@ -136,7 +132,6 @@ async function initializeZegoCloud() {
             showTurnOffRemoteMicrophoneButton: true,
             showRemoveUserButton: true,
             onJoinRoom: () => {
-                // Wait for Zego UI to fully load
                 setTimeout(() => {
                     const bottomBar = document.querySelector('.zego-uikit-prebuilt-bottom-bar');
                     if (bottomBar) {
@@ -145,19 +140,15 @@ async function initializeZegoCloud() {
                         drawButton.innerHTML = '✏️ Draw';
                         drawButton.onclick = toggleDrawing;
                         bottomBar.appendChild(drawButton);
-                    } else {
-                        console.error('Could not find Zego bottom bar');
                     }
                 }, 2000);
             }
         });
 
     } catch (error) {
-        console.error('Error initializing Zego:', error);
+        console.error('Error:', error);
     }
-}
-
-window.onload = initializeZegoCloud;
+};
 
 function toggleDrawing() {
     const drawingControls = document.getElementById('drawing-controls');
