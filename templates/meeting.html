@@ -1,16 +1,28 @@
 {% extends "base.html" %}
 
 {% block full_content %}
-<div id="root"></div>
-<div class="back-to-dashboard">
-    <a href="{{ url_for('dashboard') }}" style="text-decoration: none;">
-        <button>Back to Dashboard</button>
-    </a>
+<div class="container">
+    <h1>Video Meeting Room</h1>
+    <div id="local-player"></div>
+    <div id="remote-player"></div>
+    <div class="controls">
+        <button onclick="startCall()">Start Call</button>
+        <button onclick="toggleMic()">Toggle Mic</button>
+        <button onclick="toggleCamera()">Toggle Camera</button>
+        <button onclick="toggleDrawing()">Toggle Drawing</button>
+        <button onclick="leaveCall()">Leave Call</button>
+    </div>
+    <div id="drawing-controls">
+        <!-- Add drawing controls here -->
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://unpkg.com/@zegocloud/zego-uikit-prebuilt/zego-uikit-prebuilt.js"></script>
+<script src="https://web.sdk.qcloud.com/im/im-sdk-v2/im.js"></script>
+<script src="https://web.sdk.qcloud.com/zego/zegocloud/zegocloud.js"></script>
+<script src="{{ url_for('static', filename='js/hand_gesture.js') }}"></script>
 <script>
 async function initializeZegoCloud() {
     try {
@@ -33,7 +45,7 @@ async function initializeZegoCloud() {
 
         const zp = ZegoUIKitPrebuilt.create(kitToken);
         zp.joinRoom({
-            container: document.querySelector("#root"),
+            container: document.querySelector("#remote-player"),
             sharedLinks: [{
                 name: 'Personal link',
                 url: window.location.protocol + '//' + window.location.host + window.location.pathname + '?roomID=' + roomID,
@@ -60,5 +72,55 @@ async function initializeZegoCloud() {
 }
 
 window.onload = initializeZegoCloud;
+
+const localVideo = document.getElementById('local-player');
+let stream;
+let micEnabled = true;
+let cameraEnabled = true;
+
+async function startCall() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.srcObject = stream;
+        await localVideo.play();
+    } catch (error) {
+        console.error('Error accessing media devices:', error);
+    }
+}
+
+function toggleMic() {
+    if (stream) {
+        stream.getAudioTracks().forEach(track => {
+            track.enabled = !micEnabled;
+        });
+        micEnabled = !micEnabled;
+    }
+}
+
+function toggleCamera() {
+    if (stream) {
+        stream.getVideoTracks().forEach(track => {
+            track.enabled = !cameraEnabled;
+        });
+        cameraEnabled = !cameraEnabled;
+    }
+}
+
+function leaveCall() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+    window.location.href = "{{ url_for('dashboard') }}";
+}
+
+function toggleDrawing() {
+    // Add drawing toggle logic here
+}
+
+// Get the username from Flask
+const username = "{{ username }}";
+// Get room ID from URL parameters
+const urlParams = new URLSearchParams(window.location.search);
+const roomID = urlParams.get('roomID');
 </script>
 {% endblock %}
